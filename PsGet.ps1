@@ -56,8 +56,7 @@ function main
         if ($contents.Length -gt 1) {
             $Username = $contents[0]
             $SecurePassword = $contents[1] | ConvertTo-SecureString
-            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)
-            $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+            $Password = ConvertToPlainText-FromSecureString $SecurePassword
             Write-Host "Using username $Username from settings"
         }
     } elseif (!$Username) {
@@ -178,6 +177,12 @@ param(
     }
 }
 
+function ConvertToPlainText-FromSecureString($SecureString)
+{
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+    return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+}
+
 function TryDownloadFileOrAskForCredentials
 {
 param(
@@ -258,6 +263,7 @@ function AskForCredentials ($defaultUsername) {
         $password = Read-Host "Password" -AsSecureString
     } while ($password.Length -eq 0)
 
+    $password = ConvertToPlainText-FromSecureString $password
     return new-object -type system.net.networkcredential $username,$password
 }
 
