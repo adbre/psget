@@ -35,6 +35,12 @@ This example demonstrates how the script could be called in a build environment,
     .\PsGet.ps1 -Username $env:psgetUsername -Password $env:psgetPassword -Output ext -InputFile references.cfg
 
 
+#### Caching username and password
+By setting the -SaveCredentials switch, PsGet.ps1 will immediatly prompt you for a username and password, and saving it to your local profile
+so you don't have to be prompted for a password everytime PsGet.ps1 invokes.
+
+    .\PsGet.ps1 -SaveCredentials
+
 ## Requirements
 
 PsGet.ps1 depends on curl.exe from the Git for Windows installation to do the heavy lifting.
@@ -80,3 +86,11 @@ If omitted, PsGet.ps1 will look for 7z.exe in %PROGRAMFILES%\7-Zip and %PROGRAMF
 ##### -unzip *path*
 Explictly sets the path to unzip.exe
 This is only required if you don't have 7zip installed, or have set -7Zip and doesn't have Git for windows installed in %PROGRAMFILES%\Git or %PROGRAMFILES(x86)%\Git
+
+##### -SaveCredentials
+When set, PsGet.ps1 will only ask for your credentials, and save it encyrypted to %APPDATA%\PsGet\psget.credential and return.
+If PsGet.ps1 is thereafter invoked as normal, without the -Username or -Password parameters set, PsGet.ps1 will load the credentials
+from this file.
+
+##### -Force
+When set, PsGet.ps1 will always download a new copy, overwriting existing files in the cache.

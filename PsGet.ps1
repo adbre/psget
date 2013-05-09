@@ -22,23 +22,54 @@ param(
     [string]$InputFile = "psget.config",
     [string]$DownloadDirectory = [System.IO.Path]::Combine(${env:LOCALAPPDATA}, "PsGet\Cache"),
     [string]$Output = "packages",
-    [string]$Username = [Environment]::UserName,
+    [string]$Username,
     [string]$Password,
     [bool]$UnpackInSubdirectory = $true,
     [bool]$Interactive = $true,
     [string]$Curl,
     [string]$7Zip,
-    [string]$unzip
+    [string]$unzip,
+    [switch]$SaveCredentials,
+    [switch]$Force
 )
+
+$CredentialFile = [System.IO.Path]::Combine(${env:APPDATA}, "PsGet\psget.credential")
+
+function AskForCredentialsAndSave
+{
+    $credentials = AskForCredentials
+    $Username = $credentials.UserName
+    $Password = $credentials.SecurePassword | ConvertFrom-SecureString
+    CreateParentDirectoryIfNotExists $CredentialFile
+    "$Username $Password" >$CredentialFile
+}
 
 function main
 {
+    if ($SaveCredentials) {
+        AskForCredentialsAndSave
+        return
+    }
+
+    if (!$Username -and !$Password -and [System.IO.File]::Exists($CredentialFile)) {
+        $contents = (Get-Content $CredentialFile).Split(' ')
+        if ($contents.Length -gt 1) {
+            $Username = $contents[0]
+            $SecurePassword = $contents[1] | ConvertTo-SecureString
+            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)
+            $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+            Write-Host "Using username $Username from settings"
+        }
+    } elseif (!$Username) {
+        $Username = [Environment]::UserName
+    }
+
     DownloadAndUnpackFiles `
         -fileEntries (ReadInputFile -fileName $(GetRootedPath $InputFile)) `
         -downloadDirectory (GetRootedPath $DownloadDirectory) `
         -unpackDirectory (GetRootedPath $Output) `
         -username $Username `
-        -password $Pasword
+        -password $Password
 }
 
 function NewInputFileEntry
@@ -265,7 +296,7 @@ param(
     [string]$username,
     [string]$password
 )    
-    if (([System.IO.File]::Exists($fileName)) -and (Md5ChecksumMatches $fileName $expectedMd5Checksum)) {
+    if (([System.IO.File]::Exists($fileName)) -and (Md5ChecksumMatches $fileName $expectedMd5Checksum) -and !$Force) {
         return
     }
 
