@@ -410,7 +410,7 @@ param(
     [string]$archive,
     [string]$output
 )
-    & $7z e -y "-o$output" $archive >$null
+    & $7z x -y "-o$output" $archive >$null
     if ($LastExitCode -ne 0) {
         throw "unzip returned with exit code $LastExitCode"
     }
