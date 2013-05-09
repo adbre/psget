@@ -94,7 +94,7 @@ param(
     $currentLine = 1
     $fileEntries = @()
     Get-Content $fileName | foreach {
-        if (![String]::IsNullOrWhitespace($_))
+        if (![String]::IsNullOrEmpty($_))
         {        
             $words = $_.Split(' ')
             if (($words.Count -ne 1) -and ($words.Count -ne 2)) {
@@ -117,7 +117,7 @@ param(
                 throw "$($uri.Scheme) is not a supported scheme. On line $currentLine"
             }
 
-            if ((![String]::IsNullOrWhitespace($entry.Md5Checksum)) -and (!(IsMd5Checksum $entry.Md5Checksum))) {
+            if ((![String]::IsNullOrEmpty($entry.Md5Checksum)) -and (!(IsMd5Checksum $entry.Md5Checksum))) {
                 throw "If the second word is specified, it must be a valid MD5 checksum ([0-9a-fA-F]{32}). On line $currentLine"
             }
 
@@ -161,7 +161,7 @@ param(
     CreateParentDirectoryIfNotExists $fileName
 
     Write-Host "D $url"
-    if ((![String]::IsNullOrWhitespace($username)) -and (![String]::IsNullOrWhitespace($password))) {
+    if ((![String]::IsNullOrEmpty($username)) -and (![String]::IsNullOrEmpty($password))) {
         $credentials = [string]::Format("{0}:{1}", $username, $password)            
         & $curl --fail -o "$fileName" --progress-bar --location --digest -u "$credentials" "$url" >$null
     } else {
@@ -188,7 +188,7 @@ param(
 )
     for ($i = 0; $i -le 5; $i++)
     {
-        if ([string]::IsNullOrWhitespace($password)) {
+        if ([string]::IsNullOrEmpty($password)) {
             $credentials = GetCredentialsFromCache $url
             if ($credentials) {
                 $username = $credentials.UserName
@@ -243,13 +243,13 @@ function SaveCredentialsInCache($url, $credentials)
 }
 
 function AskForCredentials ($defaultUsername) {
-    if ([string]::IsNullOrWhitespace($defaultUsername)) {
+    if ([string]::IsNullOrEmpty($defaultUsername)) {
         do {
             $username = Read-Host "Username"
-        } while ([string]::IsNullOrWhitespace($username))
+        } while ([string]::IsNullOrEmpty($username))
     } else {
         $username = Read-Host "Username [$defaultUsername]"
-        if ([string]::IsNullOrWhitespace($username)) {
+        if ([string]::IsNullOrEmpty($username)) {
             $username = $defaultUsername
         }
     }
@@ -303,7 +303,7 @@ param(
     TryDownloadFileOrAskForCredentials $url $fileName $username $password
 
     # Terminate if we expected a md5 checksum but validation failed
-    if ((![string]::IsNullOrWhitespace($expectedMd5Checksum)) -and !(Md5ChecksumMatches $fileName $expectedMd5Checksum)) {
+    if ((![string]::IsNullOrEmpty($expectedMd5Checksum)) -and !(Md5ChecksumMatches $fileName $expectedMd5Checksum)) {
         throw "Downloaded file $fileName does not match expected checksum $expectedMd5Checksum"
     }
 }
@@ -326,9 +326,6 @@ function ComputeMd5Checksum($fileName)
         $bytes = $md5.ComputeHash($stream)
         return ConvertByteArrayToHexString($bytes)
     } finally {
-        if ($md5 -ne $null) {
-            $md5.Dispose()
-        }
         if ($stream -ne $null) {
             $stream.Dispose()
         }
@@ -455,7 +452,7 @@ param(
 }
 
 function GetDefaultOrFindFullPath($path, $default) {
-    if (![string]::IsNullOrWhitespace($default) -and [System.IO.File]::Exists($default)) {
+    if (![string]::IsNullOrEmpty($default) -and [System.IO.File]::Exists($default)) {
         return $default
     } else {
         return FindFullPath $path
